@@ -12,16 +12,16 @@ var InitPage={
         //登陆
         $('#loginBtn').on('click',function () {
             accountMgr.login();
-        })
+        });
         $('#submitBtn').on('click',function () {
             accountMgr.register();
-        })
+        });
         //入盟
 
         //忘记密码
         $('#sendSMS').on('click',function () {
             foget.send();
-        })
+        });
         $('#update').on('click',function(){
             foget.update();
         })
@@ -61,7 +61,7 @@ var accountMgr={
         }else{
             $.ajax({
                 type : 'POST',
-                url : 'http://localhost:8080/login',
+                url : '/login',
                 data : {
                     username : username,
                     pwd : password,
@@ -72,7 +72,7 @@ var accountMgr={
                 success : function(res) {
                     if (res.code == 0) {
                         // 登录成功
-                        alert("登陆成功，欢迎用户"+username);
+                        // alert("登陆成功，欢迎用户"+username);
                         var roleName = "";
                         $.each(res, function(index, obj){
                             if(roleString == "merchant"){

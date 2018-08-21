@@ -3,9 +3,19 @@ $(function () {
     InitPage.action();
 });
 
+var result;
 var InitPage = {
     init:function(){
         Basic.initMyMenu();
+        if (window.location.href.indexOf("shopInfoMgr") > 0) {
+            memMgr.initList();
+        }else if(window.location.href.indexOf("AdminAccept") > 0){
+            ShopMgr.showAcceptList();
+        }else if (window.location.href.indexOf("customerInfoMgr") > 0) {
+            alert("功能尚未开放");
+        }else if (window.location.href.indexOf("AdminManagePoints") > 0) {
+            PointsMgr.initList();
+        }
     },
     action:function () {
         var username = Basic.getPassingStr("username");
@@ -18,6 +28,7 @@ var InitPage = {
             });
             //跳转《会员管理》
             $('#AdminMemberBtn').on('click',function () {
+                // alert("功能尚未开放");
                 window.location.href = "./customerInfoMgr.html?username="+username+"&role="+role+"";
             });
             //跳转《商家管理》
@@ -26,10 +37,12 @@ var InitPage = {
             });
             //跳转《发布管理》
             $('#AdminReleaseManagementBtn').on('click',function () {
+                alert("功能还没开放");
                 window.location.href = "./AdminReleaseManagement.html?username="+username+"&role="+role+"";
             });
             //跳转《积分管理》
             $('#AdminIntegralManagement').on('click',function () {
+                // alert("功能还没开放");
                 window.location.href = "./AdminManagePoints.html?username="+username+"&role="+role+"";
             });
 
@@ -37,6 +50,7 @@ var InitPage = {
             //商家账号管理
             $('#shopAccMgrBtn').on('click',function(){
                 //还没有这个页面
+                alert("功能还没开放");
             });
             //商家统计信息
             $('#shopCountBtn').on('click',function () {
@@ -139,30 +153,29 @@ var Basic = {
 };
 
 var memMgr = {
+
     //刷新列表
     //有可变数量的标签的列表更新
     initList: function () {
         $.ajax({
-            type: '',
-            url: '',
+            type: 'GET',
+            url: '/getallmerchant',
             dataType: 'json',
             success: function (result) {
                 var count = 0;
-                $.each(result, function (index, obj) {
+                $('#tbody').empty();
+                $.each(result.data, function (index, obj) {
                     $('#tbody').append(
                         "<tr>\n" +
-                        "                                            <td style=\"text-align: center\">2131212</td>\n" +
+                        "                                            <td style=\"text-align: center\"> "+ obj.merid + "</td>\n" +
                         // 这个id要动态给
+                        "                                            <td style=\"text-align: center\"> " + obj.mertype + "</td>\n" +
                         "                                            <td style=\"text-align: center\" id='label+" + count + "'>\n" +
-                        "                                                <span class=\"label label-inverse\">火锅</span>\n" +
-                        "                                                <span class=\"label label-inverse\">快餐</span>\n" +
-                        "                                                <span class=\"label label-inverse\">火锅</span>\n" +
-                        "                                                <span class=\"label label-inverse\">快餐</span>\n" +
+                        "                                                <span class=\"label label-inverse\">功能尚未开放</span>\n" +
                         "                                            </td>\n" +
-                        "                                            <td style=\"text-align: center\">西兰</td>\n" +
-                        "                                            <td style=\"text-align: center\">女</td>\n" +
-                        "                                            <td style=\"text-align: center\">2010年10月1日</td>\n" +
-                        "                                            <td style=\"text-align: center\">214436522@qq.com</td>\n" +
+                        "                                            <td style=\"text-align: center\">"+ obj.merarea + "</td>\n" +
+                        "                                            <td style=\"text-align: center\">"+ obj.merprincipal + "</td>\n" +
+                        "                                            <td style=\"text-align: center\">"+ obj.mertelphone + "</td>\n" +
                         "                                            <td>\n" +
                         "                                                <div class='text-right'>\n" +
                         "                                                    <a class='btn btn-success btn-mini' href='#' onclick='ShopInfoMgr.showInfo(this)'>\n" +
@@ -197,6 +210,8 @@ var memMgr = {
 }
 
 var ShopMgr = {
+    //《商家列表页》
+
     //刷新列表
     initList:function () {
         // $('#tbody').empty();
@@ -229,7 +244,7 @@ var ShopMgr = {
         );
         $.ajax({
             type : 'POST',
-            url : 'http://localhost:8080/examine/application/list',
+            url : '/application/list',
             datatype : 'json',
             success : function (result) {
                 $.each(result.data,function(index, obj){
@@ -276,39 +291,217 @@ var ShopMgr = {
     updateInfo:function () {
 
     },
+
+    //《商家审核页》
+    //初始化信息列表
+    showAcceptList:function () {
+        $.ajax({
+            type : "POST",
+            url : "/examine/application/list",
+            dataType : "json",
+            success : function (res) {
+                $.each(res.data, function (index, obj) {
+                    console.log(obj);
+                    var urlText = "/examine/application/"+obj.acamerchant;
+                    var acaid = obj.acaid;
+                    $.ajax({
+                        type : "POST",
+                        url : urlText,
+                        dataType : "json",
+                        success : function (res2) {
+                          // $.each(res2.date, function (index2, res2.data) {
+                              // $('#shopType').find("option:selected").attr("value");
+                            // console.log(this);
+                            $('#acceptShopList').append(
+                                "<table>\n" +
+                                "                    <tr align=\"center\">\n" +
+                                "                        <td style=\"width:120px\" class=\"text-left\">商家类型</td>\n" +
+                                "                        <td colspan=\"4\">\n" +
+                                "                            <label for=\"shopType\" class=\"col-sm-2 control-label\" style=\"text-align: left\"></label>\n" +
+                                "                            <input id=\"shopType\" type=\"text\" style=\"width: 700px\" placeholder='"+res2.data.mertype+"'>\n" +
+                                "                        </td>\n" +
+                                "                    </tr>\n" +
+                                "                    <tr align=\"center\">\n" +
+                                "                        <td style=\"width:120px\" class=\"text-left\">商家名称</td>\n" +
+                                "                        <td colspan=\"4\">\n" +
+                                "                            <label for=\"shopName\" class=\"col-sm-2 control-label\" style=\"text-align: left\"></label>\n" +
+                                "                            <!--改默认显示-->\n" +
+                                "                            <input id=\"shopName\" type=\"text\" placeholder=\""+res2.data.mername+"\" style=\"width: 700px\"></td>\n" +
+                                "                    </tr>\n" +
+                                "                    <tr align=\"center\">\n" +
+                                "                    <td style=\"width:120px\" class=\"text-left\">商家地址</td>\n" +
+                                "                        <td colspan=\"4\">\n" +
+                                "                            <label for=\"shopAddress\" class=\"col-sm-2 control-label\" style=\"text-align: left\"></label>\n" +
+                                "                            <input id=\"shopAddress\" type=\"text\" placeholder=\""+res2.data.merarea+"\" style=\"width: 700px\"></td>\n" +
+                                "                    </tr>\n" +
+                                "                    <tr align=\"center\">\n" +
+                                "                    <td style=\"width:120px\" class=\"text-left\">联系电话</td>\n" +
+                                "                        <td colspan=\"4\">\n" +
+                                "                            <label for=\"phoneNumber\" class=\"col-sm-2 control-label\" style=\"text-align: left\"></label>\n" +
+                                "                            <input id=\"phoneNumber\" type=\"text\" placeholder=\""+res2.data.mertelphone+"\" style=\"width: 700px\"></td>\n" +
+                                "                    </tr>\n" +
+                                "                    <tr align=\"center\">\n" +
+                                "                    <td style=\"width:120px\" class=\"text-left\">消费积分比例</td>\n" +
+                                "                        <td colspan=\"4\">\n" +
+                                "                            <label for=\"ratio\" class=\"col-sm-2 control-label\" style=\"text-align: left\"></label>\n" +
+                                "                            <input id=\"ratio\" type=\"text\" placeholder=\""+res2.data.mercumpresent+"\" style=\"width: 700px\"></td>\n" +
+                                "                    </tr>\n" +
+                                "                    <tr align=\"center\">\n" +
+                                "                    <td style=\"width:120px\" class=\"text-left\">会员积分价值比例</td>\n" +
+                                "                        <td colspan=\"4\">\n" +
+                                "                            <label for=\"disCount\" class=\"col-sm-2 control-label\" style=\"text-align: left\"></label>\n" +
+                                "                            <input  id=\"disCount\" type=\"text\" placeholder=\""+res2.data.merdicpresent+"\" style=\"width: 700px\"></td>\n" +
+                                "                    </tr>\n" +
+                                "                    <!--分隔线-->\n" +
+                                "                                        <tr>\n" +
+                                "                        <td>\n" +
+                                "                            <div><hr class='hr-normal' /></div>\n" +
+                                "                        </td>\n" +
+                                "                                                <td>\n" +
+                                "                            <div><hr class='hr-normal' /></div>\n" +
+                                "                        </td>\n" +
+                                "                    </tr>\n" +
+                                "                        <tr align=\"center\">\n" +
+                                "                          <td style=\"width:100px\" class=\"text-left\">姓名</td>\n" +
+                                "                        <td colspan=\"4\">\n" +
+                                "                            <label for=\"realName\" class=\"col-sm-2 control-label\" style=\"text-align: left\"></label>\n" +
+                                "                            <input id=\"realName\" type=\"text\" placeholder=\""+res2.data.merprincipal+"\" style=\"width: 700px\"></td>\n" +
+                                "             </tr>\n" +
+                                "             <tr align=\"center\">\n" +
+                                "                      <td style=\"width:120px\" class=\"text-left\">称谓</td>\n" +
+                                "                        <td colspan=\"4\">\n" +
+                                "                            <label for=\"sex\" class=\"col-sm-2 control-label\" style=\"text-align: left\"></label>\n" +
+                                "                            <input id=\"sex\" type=\"text\" style=\"width: 700px\" placeholder='"+res2.data.merappellation+"'></td>\n" +
+                                "                            <!--<select id=\"sex\" style=\"width: 710px; background-color: white\">-->\n" +
+                                "                                <!--<option style=\"display:none;\" disabled selected>请选择称谓</option>-->\n" +
+                                "                                <!--<option value=\"male\">男士</option>-->\n" +
+                                "                                <!--<option value=\"female\">女士</option>-->\n" +
+                                "                            <!--</select>-->\n" +
+                                "                        </td>\n" +
+                                "               </tr>\n" +
+                                "                  <tr align=\"center\">\n" +
+                                "                   <td style=\"width:120px\" class=\"text-left\">职务</td>\n" +
+                                "                        <td colspan=\"4\">\n" +
+                                "                            <label for=\"job\" class=\"col-sm-2 control-label\" style=\"text-align: left\"></label>\n" +
+                                "                            <input id=\"job\" type=\"text\" placeholder=\""+res2.data.merduty+"\" style=\"width: 700px\"></td>\n" +
+                                "                </tr>\n" +
+                                "            <tr align=\"center\">\n" +
+                                "                        <td style=\"width:120px\" class=\"text-left\">个人手机</td>\n" +
+                                "                        <td colspan=\"4\">\n" +
+                                "                            <label for=\"personalPhoneNumber\" class=\"col-sm-2 control-label\" style=\"text-align: left\"></label>\n" +
+                                "                            <input id=\"personalPhoneNumber\" type=\"text\" placeholder=\""+res2.data.merphone+"\" style=\"width: 700px\"></td>\n" +
+                                "            </tr>\n" +
+                                "            <tr align=\"center\">\n" +
+                                "                        <td style=\"width:120px\" class=\"text-left\">传真</td>\n" +
+                                "                        <td colspan=\"4\">\n" +
+                                "                            <label for=\"fax\" class=\"col-sm-2 control-label\" style=\"text-align: left\"></label>\n" +
+                                "                            <input id=\"fax\" type=\"text\" placeholder=\""+res2.data.merfax+"\" style=\"width: 700px\"></td>\n" +
+                                "            </tr>\n" +
+                                "             <tr align=\"center\">\n" +
+                                "             <td style=\"width:120px\" class=\"text-left\">电子邮箱</td>\n" +
+                                "                        <td colspan=\"4\">\n" +
+                                "                            <label for=\"email\" class=\"col-sm-2 control-label\" style=\"text-align: left\"></label>\n" +
+                                "                            <input id=\"email\" type=\"text\" placeholder=\""+res2.data.meremail+"\" style=\"width: 700px\"></td></tr>\n" +
+                                "                     <!--保存提示按钮+提示保存-->\n" +
+                                "                     <tr >\n" +
+                                "             <td colspan=\"12\" >\n" +
+                                "                    <h6 class='text-right'>点击审核按钮后系统发送信息通知商家并分配账号，点击驳回后也会进行短信通知未通过</h6>\n" +
+                                "                    <button class='btn pull-right' onclick='ShopMgr.rejectIt("+acaid+")'>\n" +
+                                "                        <i class='icon-remove'></i>\n" +
+                                "                       驳回\n" +
+                                "                    </button>\n" +
+                                "                        <div value='"+res2.data.merid+"'></div>"+
+                                "                    <button class='btn pull-right' onclick='ShopMgr.acceptIt("+acaid+")'>\n" +
+                                "                        <i class='icon-ok'></i>\n" +
+                                "                        同意\n" +
+                                "                    </button>\n" +
+                                "                    </td>\n" +
+                                "                    </tr>\n" +
+                                "\n" +
+                                "            </table>"
+                            );
+                          // })
+                        },
+                    });
+                }
+                )
+            }
+        });
+    },
+
+    acceptIt:function (getPrev) {
+        var urlText = "/examine/application/"+getPrev+"/agree";
+        console.log(getPrev);
+        $.ajax({
+            type : "POST",
+            url : urlText,
+            dataType : "json",
+            success : function (res) {
+                if(res.code == 0){
+                    alert("审核通过");
+                    window.location.reload(); // 刷新页面
+                }else(
+                    alert("后台错误，添加失败")
+                )
+            },
+            error : function (res) {
+                alert("服务器故障，添加失败");
+            },
+        });
+    },
+
+    rejectIt:function (getPrev) {
+        var urlText = "/application/"+getPrev+"/disagree";
+        $.ajax({
+            type : "POST",
+            url : urlText,
+            dataType : "json",
+            success : function (res) {
+                if(res.code == 0){
+                    alert("驳回成功");
+                    window.location.reload(); // 刷新页面
+                }else(
+                    alert("后台错误，添加失败")
+                )
+            },
+            error : function (res) {
+                alert("服务器故障，添加失败");
+            },
+        });
+    },
 }
 
 var PointsMgr = {
 
     initList:function () {
+        $('#tbody').empty();
         $.ajax({
-            type : "POST",
-            url : "/creditconsume/record/list",
+            type : "GET",
+            url : "../consumecredit/submit/list",
             dataType : "json",
             success : function (result) {
-                alert("查询成功");
+                // alert("查询成功");
                 $.each(result.data, function (index, obj) {
                     //未处理的记录
-                    if(obj.transferstate == null){
+                    if(obj.csstat == null){
                         $('#tbody').append(
                             "<tr>\n" +
-                            "                                            <td style=\"text-align: center\" >"+obj.creconid+"</td>\n" +
-                            "                                            <td style=\"text-align: center\" >"+obj.memid+"</td>\n" +
+                            "                                            <td style=\"text-align: center\" >"+obj.csid+"</td>\n" +
                             "                                            <td style=\"text-align: center\">"+obj.merid+"</td>\n" +
                             "                                            <td style=\"text-align: center\" id=\"state\">\n" +
                             // "                                                <span class=\"label label-success\">已完成</span>\n" +
                             // "                                                <!--<span class=\"label label-important\">已驳回</span>-->\n" +
                             "                                                <span class=\"label label-warning\">未处理</span>\n" +
                             "                                            </td>\n" +
-                            "                                            <td style=\"text-align: center\">"+obj.credits+"</td>\n" +
-                            "                                            <td style=\"text-align: center\">"+obj.recordtime+"</td>\n" +
+                            "                                            <td style=\"text-align: center\">"+obj.cscredit+"</td>\n" +
+                            // "                                            <td style=\"text-align: center\">"+obj.recordtime+"</td>\n" +
                             "                                            <td>\n" +
-                            "                                                <div value ='"+obj.creconid+"'></div>\n" +
+                            "                                                <div value ='"+obj.csid+"'></div>\n" +
                             "                                                <div class='text-right'>\n" +
-                            "                                                    <a class='btn btn-success btn-mini' href='#' onclick='PointsMgr.showInfo(this)'>\n" +
+                            "                                                    <a class='btn btn-success btn-mini' href='#' onclick='PointsMgr.pass(" + obj.csid + ")'>\n" +
                             "                                                        <i class='icon-pencil'></i>\n" +
                             "                                                    </a>\n" +
-                            "                                                    <a class='btn btn-danger btn-mini' href='#'>\n" +
+                            "                                                    <a class='btn btn-danger btn-mini' href='#' onclick='PointsMgr.reject(" + obj.csid + ")'>\n" +
                             "                                                        <i class='icon-remove'></i>\n" +
                             "                                                    </a>\n" +
                             "                                                </div>\n" +
@@ -317,26 +510,26 @@ var PointsMgr = {
                         );
                     }
                     //驳回的记录
-                    else if(obj.transferstate == 0){
+                    else if(obj.csstat == false){
                         $('#tbody').append(
                             "<tr>\n" +
-                            "                                            <td style=\"text-align: center\" >"+obj.creconid+"</td>\n" +
-                            "                                            <td style=\"text-align: center\" >"+obj.memid+"</td>\n" +
+                            "                                            <td style=\"text-align: center\" >"+obj.csid+"</td>\n" +
+
                             "                                            <td style=\"text-align: center\">"+obj.merid+"</td>\n" +
                             "                                            <td style=\"text-align: center\" id=\"state\">\n" +
                             // "                                                <span class=\"label label-success\">已完成</span>\n" +
                             "                                                <span class=\"label label-important\">已驳回</span>\n" +
                             "                                                <!--<span class=\"label label-warning\">未处理</span>-->\n" +
                             "                                            </td>\n" +
-                            "                                            <td style=\"text-align: center\">"+obj.credits+"</td>\n" +
-                            "                                            <td style=\"text-align: center\">"+obj.recordtime+"</td>\n" +
+                            "                                            <td style=\"text-align: center\">"+obj.cscredit+"</td>\n" +
+                            // "                                            <td style=\"text-align: center\">"+obj.recordtime+"</td>\n" +
                             "                                            <td>\n" +
-                            "                                                <div value ='"+obj.creconid+"'></div>\n" +
+                            "                                                <div value ='"+obj.csid+"'></div>\n" +
                             "                                                <div class='text-right'>\n" +
-                            "                                                    <a class='btn btn-success btn-mini' href='#' onclick='PointsMgr.showInfo(this)'>\n" +
+                            "                                                    <a class='btn btn-success btn-mini' href='#' onclick='alert(\"该记录已处理\")'>\n" +
                             "                                                        <i class='icon-pencil'></i>\n" +
                             "                                                    </a>\n" +
-                            "                                                    <a class='btn btn-danger btn-mini' href='#'>\n" +
+                            "                                                    <a class='btn btn-danger btn-mini' href='#' onclick='alert(\"该记录已处理\")'>\n" +
                             "                                                        <i class='icon-remove'></i>\n" +
                             "                                                    </a>\n" +
                             "                                                </div>\n" +
@@ -345,26 +538,26 @@ var PointsMgr = {
                         );
                     }
                     //完成的记录
-                    else if(obj.transferstate == 1){
+                    else if(obj.csstat == true){
                         $('#tbody').append(
                             "<tr>\n" +
-                            "                                            <td style=\"text-align: center\" >"+obj.creconid+"</td>\n" +
-                            "                                            <td style=\"text-align: center\" >"+obj.memid+"</td>\n" +
+                            "                                            <td style=\"text-align: center\" >"+obj.csid+"</td>\n" +
+
                             "                                            <td style=\"text-align: center\">"+obj.merid+"</td>\n" +
                             "                                            <td style=\"text-align: center\" id=\"state\">\n" +
                             "                                                <span class=\"label label-success\">已完成</span>\n" +
                             "                                                <!--<span class=\"label label-important\">已驳回</span>-->\n" +
                             "                                                <!--<span class=\"label label-warning\">未处理</span>-->\n" +
                             "                                            </td>\n" +
-                            "                                            <td style=\"text-align: center\">"+obj.credits+"</td>\n" +
-                            "                                            <td style=\"text-align: center\">"+obj.recordtime+"</td>\n" +
+                            "                                            <td style=\"text-align: center\">"+obj.cscredit+"</td>\n" +
+                            // "                                            <td style=\"text-align: center\">"+obj.recordtime+"</td>\n" +
                             "                                            <td>\n" +
-                            "                                                <div value ='"+obj.creconid+"'></div>\n" +
+                            "                                                <div value ='"+obj.csid+"'></div>\n" +
                             "                                                <div class='text-right'>\n" +
-                            "                                                    <a class='btn btn-success btn-mini' onclick='PointsMgr.showInfo(this)'>\n" +
+                            "                                                    <a class='btn btn-success btn-mini' href='#' onclick='alert(\"该记录已处理\");'>\n" +
                             "                                                        <i class='icon-pencil' ></i>\n" +
                             "                                                    </a>\n" +
-                            "                                                    <a class='btn btn-danger btn-mini' href='#'>\n" +
+                            "                                                    <a class='btn btn-danger btn-mini' href='#' onclick='alert(\"该记录已处理\");'>\n" +
                             "                                                        <i class='icon-remove'></i>\n" +
                             "                                                    </a>\n" +
                             "                                                </div>\n" +
@@ -383,14 +576,14 @@ var PointsMgr = {
     showInfo:function (btn) {
         $.ajax({
             type: "POST",
-            url: "http://localhost:8080/creditconsume/record/list",
+            url: "/record/list",
             dataType: "json",
             success: function (result) {
                 $.each(result.data, function (index, obj) {
-                    var thisCreconid = $(btn).parents().prev().attr('value');
+                    var thiscsid = $(btn).parents().prev().attr('value');
                     var state = "";
 
-                    if(obj.creconid == thisCreconid){
+                    if(obj.csid == thiscsid){
                         if(obj.transferstate == null){
                             state = "未处理"
                         }else if(obj.transferstate == 0){
@@ -399,11 +592,11 @@ var PointsMgr = {
                             state = "已处理"
                         }
 
-                        $('#creconidText').attr('placeholder',thisCreconid);
+                        $('#csidText').attr('placeholder',thiscsid);
                         $('#memidText').attr('placeholder',obj.memid);
                         $('#meridText').attr('placeholder',obj.merid);
                         $('#adminidText').attr('placeholder',obj.adminid);
-                        $('#creditsText').attr('placeholder',obj.credits);
+                        $('#cscreditText').attr('placeholder',obj.cscredit);
                         $('#valueText').attr('placeholder',obj.value);
                         $('#recordtimeText').attr('placeholder',obj.recordtime);
                         $('#transferstateText').attr('placeholder',state);
@@ -416,11 +609,49 @@ var PointsMgr = {
         });
     },
 
-    reject:function () {
-
+    reject:function (acid) {
+        $.ajax({
+            type: "POST",
+            url: "/consumecredit/submit/update/" + acid,
+            dataType: "json",
+            data: {
+                state: "false"
+            },
+            success:function(res) {
+                if (res.code == 0) {
+                    alert("驳回请求成功");
+                    window.location.reload();
+                } else {
+                    alert("服务器错误");
+                }
+            },
+            error: function () {
+                alert("服务器繁忙");
+            }
+        });
     },
 
-    pass:function () {
+    pass:function (acid) {
+        // alert("上缴");
+        $.ajax({
+            type: "POST",
+            url: "/consumecredit/submit/update/" + acid,
+            dataType: "json",
+            data: {
+                state: "true"
+            },
+            success:function(res) {
+                if (res.code == 0) {
+                    alert("通过审核成功");
+                    window.location.reload();
+                } else {
+                    alert("服务器错误");
+                }
+            },
+            error: function () {
+                alert("服务器繁忙");
+            }
+        });
 
     }
 };
