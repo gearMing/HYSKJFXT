@@ -11,12 +11,28 @@ var result;
 var row;
 var InitPage = {
     init:function () {
+        // alert("进来了");
         if (window.location.href.indexOf("memberShoppingList") > 0) {
             shoppingRecordMgr.add();
-        }
-        if (window.location.href.indexOf("memberCardHistoryList") > 0) {
+        } else if (window.location.href.indexOf("memberCardHistoryList") > 0) {
             alert("此功能尚未开放");
-        }
+        } else if(window.location.href.indexOf("memberShopInfoDetail") > 0){
+            // alert("进入商家详细信息");
+            shopMgr.initInfoListBymacid();
+            $("#return").on('click', function () {
+                window.location.href = "./memberShopInfo.html?username="+username+"&role="+role+"";
+            });
+            $("#shoplist").on('click', function () {
+                window.location.href = "./memberShopInfo.html?username="+username+"&role="+role+"";
+            });
+            $("#sendeva").on('click', function () {
+                shopMgr.send();
+            })
+        } else if(window.location.href.indexOf("memberShopInfo") > 0){
+            shopMgr.initList();
+        } else if (window.location.href.indexOf("memberCardList") > 0) {
+            cardMgr.initList();
+        } 
         username = Basic.getPassingStr("username");
         role = Basic.getPassingStr("role");
         if (role == "member") {
@@ -24,11 +40,6 @@ var InitPage = {
         }
         Basic.initMyMenu();
         // Basic.initMainPageMenuBtn();
-        if(window.location.href.indexOf("memberShopInfo") > 0){
-            shopMgr.initList();
-        }else if(window.location.href.indexOf("memberShopInfoDetail")>0){
-            shopMgr.initInfoListBymacid();
-        }
     },
     //注册按钮
     action:function () {
@@ -92,7 +103,7 @@ var Basic = {
                     }
                     $('#paperNum').val(res.data.Object.memcerid);
                     $('#memberName').val(res.data.Object.memname);
-                    if (res.data.Object.memsex == "男") {
+                    if (res.data.Object.memsex === "男" || res.data.Object.memsex === "男士") {
                         $("#memberSex").val("1");
                     } else {
                         $("#memberSex").val("2");
@@ -217,7 +228,7 @@ var Basic = {
             });
             //跳转《我的卡包》
             $('#cardListBtn').on('click',function () {
-                window.location.href = "./memberCardHistoryList.html?username="+username+"&role="+role+"";
+                window.location.href = "./memberCardList.html?username="+username+"&role="+role+"";
             });
             //跳转《修改密码》
             $('#updatePwdBtn').attr("href","../Login/changePassword.html");
@@ -614,7 +625,7 @@ var shopMgr = {
                     for(var i=0;i<res.data.length;i++){
                         // alert("!");
                         var obj = res.data[i];
-                        var infoHref = "http://localhost:8080/Member/memberShopInfoDetail.html?macid=" + obj.macid;
+                        // var infoHref = "http://localhost:8080/Member/memberShopInfoDetail.html?macid=" + obj.macid;
                         // alert(infoHref);
                         $('#shopListAll').append(
                             "<br>" +
@@ -665,7 +676,7 @@ var shopMgr = {
                             "                        <td colspan=\"4\" href='\" + infoHref + \"'>\n" +
                             "                            <label for=\"infohref\" class=\"col-sm-2 control-label\" style=\"text-align: left\"></label>\n" +
                             "                            <!--超链接-->\n" +
-                            "                            <a id=\"infohref\" style=\"text-align: left\" href='#' onclick='getmerchant("+ obj.macid +")'>查看更多信息</a>\n" +
+                            "                            <a id=\"infohref\" style=\"text-align: left\" href='#' onclick='getmerchant("+ obj.merid +")'>查看更多信息</a>\n" +
                             "                        </td>\n" +
                             "                    </tr>\n" +
                             "            </table>\n" +
@@ -691,7 +702,7 @@ var shopMgr = {
 
     //根据商家macid获取商家详细信息
     initInfoListBymacid:function(){
-        var urlText = "http://localhost:8080/getmerchant/"+Basic.getPassingStr("macid");
+        var urlText = "http://localhost:8080/getmerchant/"+Basic.getPassingStr("merid");
         $.ajax({
             type : "GET",
             url : urlText,
@@ -734,6 +745,29 @@ var shopMgr = {
     },
     //2018.8.18 Hwalv
     //产品详情遮罩在我发给你的微信文件里 memberSearch.html中
+    send:function () {
+        // alert("发送评论功能开发中");
+        var merid = Basic.getPassingStr("merid");
+        $.ajax({
+            type: "POST",
+            url: "/memberCenter/comment/" + merid,
+            dataType: "json",
+            data: {
+                info: $("#inputTextArea").val()
+            },
+            success: function (res) {
+                 if (res.code === 0) {
+                     alert("评论成功");
+                     window.location.reload();
+                 } else {
+                     alert(res.data);
+                 }
+            },
+            error: function () {
+                alert("服务器繁忙！");
+            }
+        })
+    }
 };
 
 //消费记录页
@@ -762,8 +796,8 @@ var shoppingRecordMgr = {
             $('#tbody:last').append(
             "<tr>" +
                 '<td style="text-align: center" >' + res[i].cumid+"</td>"+
-                '<td style="text-align: center" >'+res[i].merid+"</td>"+
-                '<td style="text-align: center">'+res[i].memid+"</td>"+
+                '<td style="text-align: center" >'+res[i].mername+"</td>"+
+                '<td style="text-align: center">'+res[i].evabyN+"</td>"+
                 '<td style="text-align: center" id="state">'+
                 '<span class="label label-success">'+res[i].cumway+"</span>"+
                 "</td>"+
@@ -792,6 +826,56 @@ var accInfoMgr = {
 var cardMgr = {
     //补卡记录：memberCardHistoryList.html（列表项是什么）
     //我的会员卡：memberCardList.html（列表项是什么）
+    initList:function () {
+        // alert("显示所有会员卡");
+        $("#tbody").empty();
+        $("#tbody").empty();
+        $.ajax({
+            type: "GET",
+            url: "/memberCenter/showMemberCard",
+            dataType: "json",
+            success: function (res) {
+                if (res.code === 0) {
+                    result = res;
+                    cardMgr.addbox(res.data, 1);
+                } else {
+                    alert("服务器未知错误，请联系技术部门");
+                }
+            },
+            error: function () {
+                alert("服务器繁忙，请稍后再试");
+            }
+        })
+    },
+    addbox:function (res, num) {
+        // alert( "进来了");
+        // $('#tbody').empty();
+        for (var i = 0; i < res.length; i++) {
+            // alert( "循环开始了");
+            var state;
+            if (res[i].mcenable) {
+                state = "已启用";
+            } else {
+                state = "未启用";
+            }
+            $('#tbody:last').append(
+                "<tr>" +
+                '<td style="text-align: center" >' + res[i].mcid+"</td>"+
+                '<td style="text-align: center" >'+res[i].mername+"</td>"+
+                '<td style="text-align: center">'+res[i].mcbalance+"</td>"+
+                '<td style="text-align: center">'+ state +"</td>"+
+                "<td>"+
+                '<div value =""></div>'+
+                "<div class='text-right'>"+
+                "<a class='btn btn-success btn-mini' href='#' onclick='PointsMgr.showInfo(this)'>"+
+                // "<i class='icon-pencil'></i>"+
+                "</a>"+
+                "</div>"+
+                "</td>"+
+                "</tr>"
+            );
+        }
+    }
 };
 
 //导航栏
@@ -862,5 +946,5 @@ $('#savenewinfo').on('click',function () {
 
 //获取商家详细信息
 var getmerchant =function (me) {
-    alert("页面正在来的路上");
-}
+    window.location.href = "./memberShopInfoDetail.html?merid="+ me + "&username=" + username + "&role=" +role+"";
+};

@@ -6,12 +6,15 @@ import com.scau.hyskjf.service.MemberCenterService;
 import com.scau.hyskjf.service.MerchantAccManageService;
 import com.scau.hyskjf.util.json.ResponseCode;
 import com.scau.hyskjf.util.json.ResponseJSON;
+import org.apache.shiro.SecurityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.SessionAttributes;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 
@@ -47,6 +50,9 @@ public class MemberAccManageController {
     @RequestMapping("/addAcc")
     public ResponseJSON addAcc(Member member,String pwd,String shoppwd){
         try{
+//            SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+//            Date date = formatter.parse(birth);
+//            member.setMembirth(date);
             memberCenterService.addMemberAccount(member,pwd,shoppwd);//往memberMapper添加信息再往memberAccountMapper添加信息
             return new ResponseJSON(ResponseCode.SUCCESS);
         }
@@ -68,8 +74,9 @@ public class MemberAccManageController {
      * 会员未创建或手机号未填写返回失败码-1
      * */
     @RequestMapping("/addMemCard")
-    public ResponseJSON addMemCard(String memphone,Integer merid,Boolean mcenable){
+    public ResponseJSON addMemCard(String memphone,Boolean mcenable){
         try{
+            Integer merid = ((Merchantaccount)SecurityUtils.getSubject().getSession().getAttribute("user")).getMerid();
             Integer memID = memberMapper.queryMemIDByMemphone(memphone);//通过手机号查找memID
             if(memID==null){
                 throw new Exception();
@@ -77,6 +84,7 @@ public class MemberAccManageController {
             Membercard membercard = new Membercard();
             membercard.setMemid(memID);
             membercard.setMerid(merid);
+            membercard.setMcbalance((float) 0);
             membercard.setMcenable(true);
             String  cardNum = memberCenterService.addMemberCard(membercard);
             return new ResponseJSON(ResponseCode.SUCCESS,cardNum);
@@ -157,8 +165,14 @@ public class MemberAccManageController {
     //会员充值
     @RequestMapping("/recharge")
     public ResponseJSON rechargeMemberCard(@ModelAttribute("user") Merchantaccount merchantaccount, String cardId, Float money){
-        Memberandcard memberandcard = memberCenterService.rechargeMemberCard(cardId,money,merchantaccount);
-        return new ResponseJSON(ResponseCode.SUCCESS,memberandcard);
+        CreditConsumption record = memberCenterService.rechargeMemberCard(cardId,money,merchantaccount);
+        if(record.getCheckResult().equals(0)){
+            return new ResponseJSON(ResponseCode.SUCCESS);
+        }else if(record.getCheckResult().equals(-2)){
+            return new ResponseJSON(ResponseCode.ERRORCARD);
+        } else{
+            return new ResponseJSON(ResponseCode.WARN);
+        }
     }
 
     //会员充值历史查询

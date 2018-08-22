@@ -206,10 +206,14 @@ public class MemberCenterServiceImpl implements MemberCenterService {
         Memberaccount m = (Memberaccount) SecurityUtils.getSubject().getSession().getAttribute("user");
         if (m == null) return "nologin";
         List<Consumecomment> consumes = consumecommentMapper.selectByMerAndMem(merID, m.getMemid());
-        if (consumes.equals(null)) return "noconsume";
+        if (consumes.size() == 0) return "noconsume";
         int i = 0;
         for (i = 0; i < consumes.size(); i++) {
-            if (consumes.get(i).getHascomment().equals(true)) break;
+            if (consumes.get(i).getHascomment() == null) {
+                continue;
+            } else {
+                break;
+            }
         }
         if (i != consumes.size()) {
             return "hascomment";
@@ -269,8 +273,10 @@ public class MemberCenterServiceImpl implements MemberCenterService {
         memberaccount.setMemid(id);
         memberaccount.setMaid(member.getMemphone());//登陆账号为手机号
         memberaccount.setManame(member.getMemname());//账户名为姓名
-        String pwdMd5 = new Md5Hash(pwd,memberaccount.getMemid().toString(),3).toString();//对账户的密码进行MD5加密
-        String shopPwdMd5 = new Md5Hash(shopPwd,memberaccount.getMemid().toString(),3).toString();//对账户的支付密码进行MD5加密
+        String pwdMd5 = new Md5Hash(pwd,memberaccount.getMaid(),3).toString();//对账户的密码进行MD5加密
+        String shopPwdMd5 = new Md5Hash(shopPwd,memberaccount.getMaid(),3).toString();//对账户的支付密码进行MD5加密
+        memberaccount.setMapwd(pwdMd5);
+        memberaccount.setMacumpwd(shopPwdMd5);
         memberaccount.setMaenable(true);
         return memberaccountMapper.insert(memberaccount);
     }
@@ -306,7 +312,14 @@ public class MemberCenterServiceImpl implements MemberCenterService {
     }
 
     @Override
-    public Memberandcard rechargeMemberCard(String cardId, float money,Merchantaccount merchantaccount) {
+        public CreditConsumption rechargeMemberCard(String cardId, float money,Merchantaccount merchantaccount) {
+
+        CreditConsumption record = new CreditConsumption();
+        Membercard card =membercardMapper.queryCardByMcidAndMerId(cardId,merchantaccount.getMerid());
+        if(card==null||!card.getMcenable()){//检查卡号是否正常
+            record.setCheckResult(-2);
+            return record;
+        }
         membercardMapper.updateMoneyByCarId(cardId,money);
 
         //查找会员卡信息
@@ -321,7 +334,9 @@ public class MemberCenterServiceImpl implements MemberCenterService {
         rechargehistory.setRechargetime(new Date());
         rechargehistory.setMemid(membercard.getMemid());
         rechargehistoryMapper.insertSelective(rechargehistory);
-        return memberandcardMapper.selectByCarId(cardId);
+       // return memberandcardMapper.selectByCarId(cardId);
+        record.setCheckResult(0);
+        return record;
     }
 
     @Override

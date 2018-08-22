@@ -6,6 +6,42 @@ $(function () {
 var InitPage = {
     init:function () {
         Basic.initMyMenu();
+        if (window.location.href.indexOf("customerManagerMemberInfoAdd") > 0) {
+            $("#regisCustomerBtn").on('click', function () {
+                // alert("点击注册");
+                customerMgr.regisCustomer();
+            })
+        } else if (window.location.href.indexOf("customerManagerRecharge") > 0){
+            $("#recharge").on('click', function () {
+                rechargeMgr.recharge();
+            })
+        } else if (window.location.href.indexOf("customerManagerCard") > 0){
+            $("#addCard").on('click', function () {
+                customerMgr.regisCustomerCard();
+            });
+        } else if(window.location.href.indexOf("customerManagerMemberInfoChange") > 0) {
+            alert("此功能尚未开放");
+        } else if (window.location.href.indexOf("customerManagerMemberInfoChangeHistory") > 0) {
+            alert("此功能尚未开放");
+        } else if (window.location.href.indexOf("customerManagerConsume") > 0) {
+            $("#zhuzhiBtn").on('click', function () {
+                checkIn.zhuzhiRegis();
+            });
+            $("#xianjinBtn").on('click', function () {
+                checkIn.xianjinRegis();
+            });
+            $("#pointBtn").on('click', function () {
+                checkIn.pointRegis();
+            });
+        } else if (window.location.href.indexOf("customerManagerRechargeHistory") > 0) {
+            alert("此功能尚未开放");
+        } else if (window.location.href.indexOf("customerManagerUnsettledPoint") > 0) {
+            // alert("上缴功能开发中");
+            pointsMgr.initScore();
+            $("#sendshangjiao").on('click', function () {
+                pointsMgr.send();
+            })
+        }
     },
     action:function () {
         var username = Basic.getPassingStr("username");
@@ -88,9 +124,9 @@ var InitPage = {
             });
 
         //其他
-        $('#regisConsumeBtn').on('click',function(){
-           customerMgr.regisCustomer();
-        });
+        // $('#regisConsumeBtn').on('click',function(){
+        //    customerMgr.regisCustomer();
+        // });
     },
 };
 
@@ -172,12 +208,13 @@ var Basic = {
 var customerMgr = {
     //我的会员-登记会员信息
     regisCustomer:function () {
-        var memcer = $('#memcer').find("option:selected").attr("value");
+        // alert("注册会员");
+        var memcer = $('#memcer').find("option:selected").text();
         var memcerid = $('#memcerid').val();
         var memname = $('#memname').val();
 
-        var memsex = $('#memsex').find("option:selected").attr("value");
-        var membirth = $('#membirth').find("option:selected").attr("value");
+        var memsex = $('#memsex').find("option:selected").text();
+        var membirth = $('#membirth').val();
         var memphone = $('#memphone').val();
         var mememail = $('#mememail').val();
         var memadress = $('#memadress').val();
@@ -185,7 +222,7 @@ var customerMgr = {
         var pwd = $('#pwd').val();
         var pwdAgain = $('#pwdAgain').val();
 
-        var shopPwd = "123456";
+        var shopPwd = "111111";
         if(pwd != pwdAgain){
             alert("密码前后两次输入不一致");
         }else if(memcer == null || memcerid == null || memname == null){
@@ -204,14 +241,17 @@ var customerMgr = {
                     mememail : mememail,
                     memadress : memadress,
                     pwd : pwd,
-                    shopPwd : shopPwd
+                    shoppwd : shopPwd,
+                    membirth: membirth,
+                    memcredit: 0
                 },
                 dataType : "json",
                 success : function(res){
-                    if(res.code == 0){
+                    if(res.code === 0){
                         alert("注册成功");
+                        window.location.reload();
                     }else{
-                        alert("后台故障，注册失败");
+                        alert("请检查信息格式");
                     }
                 },
                 error : function () {
@@ -237,16 +277,12 @@ var customerMgr = {
     //会员卡发放
     regisCustomerCard:function () {
       var memphone = $('#memphone').val();
-      var merid = Basic.getPassingStr("username");
-      var mcenable = true;
-
       $.ajax({
           type : "POST",
-          url : "http://localhost:8080/memberAcc/addMemCard",
+          url : "/memberAcc/addMemCard",
           data : {
               memphone : memphone,
-              merid : merid,
-              mcenable : true,
+              mcenable : true
           },
           dataType : "json",
           success : function (res) {
@@ -275,47 +311,55 @@ var checkIn = {
         var mcid = $('#zhuzhiCardNum').val();
         var money = $('#zhuzhiMoney').val();//float不知道可不可以
         var pwd = $('#zhuzhiPass').val();
-        var macid = Basic.getPassingStr("username");
+        // var macid = Basic.getPassingStr("username");
 
         $.ajax({
            type : "POST",
-           url : "http://localhost:8080/memberConsumption/storeConsumption",
+           url : "/memberConsumption/storeConsumption",
            data : {
-               mcid : mcid,
-               money : money,
-               pwd : pwd,
-               macid : macid,
+               mcid: mcid,
+               money: money,
+               pwd: pwd
            },
             success : function(res){
-                if(res.code == 0){
-                    alert("登记成功");
-                }else{
-                    alert("后台故障，登记失败");
+                if(res.code === 0){
+                    alert("消费成功");
+                    window.location.reload();
+                } else if (res.code === -2) {
+                    alert("会员卡号错误");
+                } else if (res.code === -3) {
+                    alert("消费密码错误");
+                } else if (res.code == -5) {
+                    alert("储值不足");
+                } else {
+                    alert("服务器未知错误");
                 }
             },
             error : function () {
-                alert("服务器故障，登记失败");
+                alert("服务器繁忙");
             },
         });
     },
     //现金：customerManagerConsume.html
     xianjinRegis:function () {
-        var mcid = $('#xianjinCardNum').val();
+        var mcid = $("#xianjinCardNum").val();
         var money = $('#xianjinRealMoney').val();//float不知道可不可以
-        var macid = Basic.getPassingStr("username");
+        // var macid = Basic.getPassingStr("username");
 
         $.ajax({
             type : "POST",
-            url : "http://localhost:8080/memberConsumption/cashConsumption",
+            url : "/memberConsumption/cashConsumption",
             data : {
                 mcid : mcid,
-                money : money,
-                macid : macid,
+                money : money
             },
             success : function(res){
-                if(res.code == 0){
-                    alert("登记成功");
-                }else{
+                if(res.code === 0){
+                    alert("消费成功");
+                    window.location.reload();
+                } else if (res.code === -2) {
+                    alert("会员卡号错误");
+                } else {
                     alert("后台故障，登记失败");
                 }
             },
@@ -330,27 +374,33 @@ var checkIn = {
         var mcid = $('#CardNum').val();
         var money = $('#pointconsumeMoney').val();//float不知道可不可以
         var pwd = $('#consumePass').val();
-        var macid = Basic.getPassingStr("username");
+        // var macid = Basic.getPassingStr("username");
 
         $.ajax({
             type : "POST",
-            url : "http://localhost:8080/memberConsumption/creditConsumption",
+            url : "/memberConsumption/creditConsumption",
             data : {
                 mcid : mcid,
                 money : money,
-                pwd : pwd,
-                macid : macid,
+                pwd : pwd
             },
             success : function(res){
-                if(res.code == 0){
-                    alert("登记成功");
-                }else{
-                    alert("后台故障，登记失败");
+                if(res.code === 0){
+                    alert("消费成功");
+                    window.location.reload();
+                } else if (res.code === -2){
+                    alert("会员卡号错误");
+                } else if (res.code === -3){
+                    alert("消费密码错误");
+                } else if(res.code === -4){
+                    alert("积分不足");
+                } else{
+                    alert("未知错误");
                 }
             },
             error : function () {
-                alert("服务器故障，登记失败");
-            },
+                alert("服务器繁忙，登记失败");
+            }
         });
     }
 };
@@ -358,11 +408,74 @@ var checkIn = {
 // 消费管理-充值管理
 var rechargeMgr = {
     //充值：customerManagerRecharge.html
-
+    recharge: function () {
+        $.ajax({
+            type : "POST",
+            url : "/memberAcc/recharge",
+            data : {
+                cardId : $("#CardNum").val(),
+                money : $("#rechargeMoney").val()
+            },
+            datatype: "json",
+            success: function (res) {
+                if (res.code === 0) {
+                    alert("充值成功");
+                    window.location.reload();
+                } else if (res.code === -2) {
+                    alert("会员卡号错误");
+                } else {
+                    alert("服务器内部错误，充值失败");
+                }
+            },
+            error: function () {
+                alert("服务器繁忙");
+            }
+        })
+    }
     //充值记录查询：缺页面，列表有啥内容？
-}
+};
 
 var pointsMgr = {
     //积分管理
     //缺页面：与<Business-Admin>一样，基本照搬即可
-}
+    initScore:function(){
+        $.ajax({
+            type : "GET",
+            url : "/merchantInfo/submitdetail",
+            datatype: "json",
+            success: function (res) {
+                if (res.code === 0) {
+                    $("#score").text(res.data.owecredit);
+                } else {
+                    alert("我们遇到未知的错误！请联系系统设计人员！")
+                }
+            },
+            error: function () {
+                alert("服务器繁忙");
+            }
+        })
+    },
+
+    send:function () {
+        $.ajax({
+            type : "POST",
+            url : "/merchantInfo/creditsubmit",
+            data : {
+                credit : $("#shangjiao").val(),
+                money : $("#nadaomoney").val()
+            },
+            datatype: "json",
+            success: function (res) {
+                if (res.code === 0) {
+                    alert("提交成功");
+                    window.location.reload();
+                } else {
+                    alert("提交失败");
+                }
+            },
+            error: function () {
+                alert("服务器繁忙");
+            }
+        });
+    }
+};
